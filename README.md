@@ -1,15 +1,11 @@
-# Betrieb Maschinen App v5 - Zugmaschine + Anbaugerät
+# Betrieb Maschinen App v6 - Fahrer-Stundensatz
 
 Neu:
-- getrennte Auswahl für Zugmaschine und Anbaugerät
-- beide haben eigene Stundensätze
-- Gesamt-Stundensatz = Zugmaschine + Anbaugerät
-- Gesamtkosten werden automatisch berechnet
-- Geräte können in der App hinzugefügt oder deaktiviert werden
-- Tabellenblatt `Geräte` ersetzt das alte Maschinenblatt
-- letzter Stundenzähler wird pro Zugmaschine geladen
-- Lieferschein zeigt Zugmaschine und Anbaugerät getrennt an
-- Auswertung pro Zugmaschine, Anbaugerät, Fahrer und Kunde
+- Fahrer-Stundensatz frei in der App eingeben
+- Fahrerkosten = Arbeitszeit Fahrer × Fahrer-Stundensatz
+- Gesamtkosten = Maschinenkosten + Fahrerkosten
+- Lieferschein enthält Fahrer-Arbeitszeit und Fahrerkosten
+- Google Sheets enthält feste Spalten für Fahrer-Stundensatz, Fahrerkosten und Gesamtkosten
 
 Wichtig:
 1. Dateien auf GitHub hochladen
