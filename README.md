@@ -1,11 +1,12 @@
-# Betrieb Maschinen App v6 - Fahrer-Stundensatz
+# Betrieb Maschinen App v7 - Firmendaten
 
 Neu:
-- Fahrer-Stundensatz frei in der App eingeben
-- Fahrerkosten = Arbeitszeit Fahrer × Fahrer-Stundensatz
-- Gesamtkosten = Maschinenkosten + Fahrerkosten
-- Lieferschein enthält Fahrer-Arbeitszeit und Fahrerkosten
-- Google Sheets enthält feste Spalten für Fahrer-Stundensatz, Fahrerkosten und Gesamtkosten
+- Einstellungen-Knopf oben rechts
+- Firmendaten des Dienstleisters können direkt in der App geändert werden
+- Firmendaten werden im Google Sheet im Blatt `Firmendaten` gespeichert
+- Lieferschein verwendet automatisch diese Firmendaten
+- Firmendaten stehen nicht mehr fix im Programmcode
+- Fahrer-Stundensatz, Zugmaschine, Anbaugerät und Lieferschein bleiben enthalten
 
 Wichtig:
 1. Dateien auf GitHub hochladen

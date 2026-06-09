@@ -3,12 +3,14 @@ import React,{useEffect,useMemo,useState}from"react";
 const APP_NAME="Maschinen";
 const SHEET_WEBAPP_URL=import.meta.env.VITE_GOOGLE_SCRIPT_URL||"";
 
-const DIENSTLEISTER={
+const DEFAULT_COMPANY={
   name:"Max Mustermann",
+  zusatz:"",
   adresse:"Musterstraße 1",
   ort:"1234 Musterstadt",
   telefon:"0664 / 12345678",
-  email:"office@muster.at"
+  email:"office@muster.at",
+  uid:""
 };
 
 function parseDecimal(value){
@@ -60,6 +62,10 @@ export default function App(){
     bemerkung:""
   });
 
+  const[company,setCompany]=useState(DEFAULT_COMPANY);
+  const[companyDraft,setCompanyDraft]=useState(DEFAULT_COMPANY);
+  const[showSettings,setShowSettings]=useState(false);
+
   const[zugmaschinen,setZugmaschinen]=useState([]);
   const[anbaugeraete,setAnbaugeraete]=useState([]);
   const[newZugmaschine,setNewZugmaschine]=useState("");
@@ -74,7 +80,7 @@ export default function App(){
   const[stopwatchRunning,setStopwatchRunning]=useState(false);
   const[lastDeliveryNote,setLastDeliveryNote]=useState(null);
 
-  useEffect(()=>{loadMachines()},[]);
+  useEffect(()=>{loadInitialData()},[]);
 
   useEffect(()=>{
     if(!stopwatchRunning)return;
@@ -135,6 +141,42 @@ export default function App(){
       headers:{"Content-Type":"text/plain;charset=utf-8"},
       body:JSON.stringify(payload)
     });
+  }
+
+  async function loadInitialData(){
+    await loadMachines();
+    await loadCompany();
+  }
+
+  async function loadCompany(){
+    if(!SHEET_WEBAPP_URL)return;
+    try{
+      const data=await apiGet("company");
+      if(data.ok&&data.company){
+        const c={...DEFAULT_COMPANY,...data.company};
+        setCompany(c);
+        setCompanyDraft(c);
+      }
+    }catch{}
+  }
+
+  async function saveCompany(){
+    if(!companyDraft.name.trim()){
+      alert("Bitte Firmenname eingeben.");
+      return;
+    }
+    setLoading(true);
+    setMessage("");
+    try{
+      await apiPost({action:"saveCompany",company:companyDraft});
+      setCompany(companyDraft);
+      setShowSettings(false);
+      setMessage("Firmendaten wurden gespeichert.");
+    }catch{
+      setMessage("Firmendaten konnten nicht gespeichert werden.");
+    }finally{
+      setLoading(false);
+    }
   }
 
   async function loadMachines(){
@@ -258,7 +300,7 @@ export default function App(){
     return {
       lsNumber,
       datum:new Date().toLocaleDateString("de-AT"),
-      dienstleister:DIENSTLEISTER,
+      dienstleister:company,
       kunde:{
         name:form.kundeName.trim(),
         adresse:form.kundeAdresse.trim(),
@@ -299,7 +341,7 @@ export default function App(){
 body{font-family:Arial,sans-serif;color:#111827;margin:0;padding:32px;background:#fff}.page{max-width:850px;margin:0 auto}.top{display:flex;justify-content:space-between;gap:30px;border-bottom:3px solid #111827;padding-bottom:18px}h1{font-size:34px;margin:0 0 8px;letter-spacing:.04em}h2{font-size:16px;margin:28px 0 8px;border-bottom:1px solid #d1d5db;padding-bottom:6px}p{margin:3px 0;line-height:1.35}.muted{color:#6b7280}.box{border:1px solid #d1d5db;border-radius:10px;padding:14px;margin-top:10px}table{width:100%;border-collapse:collapse;margin-top:16px}th,td{border:1px solid #d1d5db;padding:10px;text-align:left;font-size:14px}th{background:#f3f4f6}.right{text-align:right}.signatures{display:grid;grid-template-columns:1fr 1fr;gap:60px;margin-top:70px}.line{border-top:1px solid #111827;padding-top:8px;text-align:center}@media print{body{padding:0}.page{max-width:none}.no-print{display:none}}
 </style></head>
 <body><div class="page">
-<div class="top"><div><h1>LIEFERSCHEIN</h1><p><strong>Nr.:</strong> ${htmlEscape(d.lsNumber)}</p><p><strong>Datum:</strong> ${htmlEscape(d.datum)}</p></div><div><p><strong>${htmlEscape(d.dienstleister.name)}</strong></p><p>${htmlEscape(d.dienstleister.adresse)}</p><p>${htmlEscape(d.dienstleister.ort)}</p><p>${htmlEscape(d.dienstleister.telefon)}</p><p>${htmlEscape(d.dienstleister.email)}</p></div></div>
+<div class="top"><div><h1>LIEFERSCHEIN</h1><p><strong>Nr.:</strong> ${htmlEscape(d.lsNumber)}</p><p><strong>Datum:</strong> ${htmlEscape(d.datum)}</p></div><div><p><strong>${htmlEscape(d.dienstleister.name)}</strong></p><p>${htmlEscape(d.dienstleister.zusatz)}</p><p>${htmlEscape(d.dienstleister.adresse)}</p><p>${htmlEscape(d.dienstleister.ort)}</p><p>${htmlEscape(d.dienstleister.telefon)}</p><p>${htmlEscape(d.dienstleister.email)}</p><p>${htmlEscape(d.dienstleister.uid)}</p></div></div>
 <h2>Kunde / Auftraggeber</h2><div class="box"><p><strong>${htmlEscape(d.kunde.name)}</strong></p><p>${htmlEscape(d.kunde.adresse)}</p><p>${htmlEscape(d.kunde.ort)}</p><p>${htmlEscape(d.kunde.kontakt)}</p></div>
 <h2>Einsatzdaten</h2><p><strong>Zeitraum:</strong> ${htmlEscape(d.einsatz.datumVon)} bis ${htmlEscape(d.einsatz.datumBis)}</p><p><strong>Fahrer:</strong> ${htmlEscape(d.einsatz.fahrer)}</p><p><strong>Zugmaschine:</strong> ${htmlEscape(d.einsatz.zugmaschine)}</p><p><strong>Anbaugerät:</strong> ${htmlEscape(d.einsatz.anbaugeraet||"-")}</p><p><strong>Einsatzart:</strong> ${htmlEscape(d.einsatz.einsatzart)}</p>
 <table><thead><tr><th>Position</th><th class="right">Menge</th><th>Einheit</th><th class="right">Stundensatz</th><th class="right">Gesamt</th></tr></thead><tbody>
@@ -404,7 +446,23 @@ ${d.einsatz.anbaugeraet?`<tr><td>${htmlEscape(d.einsatz.anbaugeraet)}</td><td cl
         <h1>{APP_NAME}</h1>
         <p>Betriebs- und Maschinenerfassung</p>
       </div>
+      <button type="button" className="settings-button" onClick={()=>{setCompanyDraft(company);setShowSettings(!showSettings)}}>⚙️</button>
     </header>
+
+    {showSettings&&<section className="section settings-panel">
+      <h2>Firmendaten Dienstleister</h2>
+      <Field label="Firmenname"><input type="text" value={companyDraft.name} onChange={e=>setCompanyDraft({...companyDraft,name:e.target.value})}/></Field>
+      <Field label="Zusatz / Ansprechpartner"><input type="text" value={companyDraft.zusatz} onChange={e=>setCompanyDraft({...companyDraft,zusatz:e.target.value})}/></Field>
+      <Field label="Adresse"><input type="text" value={companyDraft.adresse} onChange={e=>setCompanyDraft({...companyDraft,adresse:e.target.value})}/></Field>
+      <Field label="PLZ / Ort"><input type="text" value={companyDraft.ort} onChange={e=>setCompanyDraft({...companyDraft,ort:e.target.value})}/></Field>
+      <Field label="Telefon"><input type="text" value={companyDraft.telefon} onChange={e=>setCompanyDraft({...companyDraft,telefon:e.target.value})}/></Field>
+      <Field label="E-Mail"><input type="text" value={companyDraft.email} onChange={e=>setCompanyDraft({...companyDraft,email:e.target.value})}/></Field>
+      <Field label="UID / Steuernummer optional"><input type="text" value={companyDraft.uid} onChange={e=>setCompanyDraft({...companyDraft,uid:e.target.value})}/></Field>
+      <div className="button-grid">
+        <button type="button" className="primary" onClick={saveCompany} disabled={loading}>Firmendaten speichern</button>
+        <button type="button" className="small-button" onClick={()=>setShowSettings(false)}>Schließen</button>
+      </div>
+    </section>}
 
     {message&&<div className="message">{message}</div>}
     {lastDeliveryNote&&<div className="message action-message"><span>Lieferschein {lastDeliveryNote.lsNumber} bereit.</span><button type="button" className="secondary" onClick={()=>openDeliveryNote(lastDeliveryNote)}>Lieferschein PDF</button></div>}

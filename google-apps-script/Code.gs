@@ -20,6 +20,54 @@ function ensureItemsSheet(){
   sheet.setFrozenRows(1);
   return sheet;
 }
+function ensureCompanySheet(){
+  var sheet=getSpreadsheet().getSheetByName("Firmendaten");
+  if(!sheet)sheet=getSpreadsheet().insertSheet("Firmendaten");
+  var header=["Feld","Wert"];
+  if(sheet.getLastRow()===0){
+    sheet.appendRow(header);
+    sheet.appendRow(["name","Max Mustermann"]);
+    sheet.appendRow(["zusatz",""]);
+    sheet.appendRow(["adresse","Musterstraße 1"]);
+    sheet.appendRow(["ort","1234 Musterstadt"]);
+    sheet.appendRow(["telefon","0664 / 12345678"]);
+    sheet.appendRow(["email","office@muster.at"]);
+    sheet.appendRow(["uid",""]);
+  }else{
+    sheet.getRange(1,1,1,2).setValues([header]);
+  }
+  sheet.setFrozenRows(1);
+  return sheet;
+}
+function getCompany(){
+  var sheet=ensureCompanySheet();
+  var lastRow=sheet.getLastRow();
+  var company={name:"Max Mustermann",zusatz:"",adresse:"Musterstraße 1",ort:"1234 Musterstadt",telefon:"0664 / 12345678",email:"office@muster.at",uid:""};
+  if(lastRow<2)return company;
+  var values=sheet.getRange(2,1,lastRow-1,2).getValues();
+  values.forEach(function(row){
+    var key=String(row[0]||"").trim();
+    if(key)company[key]=String(row[1]||"");
+  });
+  return company;
+}
+function saveCompany(company){
+  var sheet=ensureCompanySheet();
+  var rows=[
+    ["Feld","Wert"],
+    ["name",company.name||""],
+    ["zusatz",company.zusatz||""],
+    ["adresse",company.adresse||""],
+    ["ort",company.ort||""],
+    ["telefon",company.telefon||""],
+    ["email",company.email||""],
+    ["uid",company.uid||""]
+  ];
+  sheet.clear();
+  sheet.getRange(1,1,rows.length,2).setValues(rows);
+  sheet.setFrozenRows(1);
+}
+
 function ensureSummarySheet(){
   var sheet=getSpreadsheet().getSheetByName("Auswertung");
   if(!sheet)sheet=getSpreadsheet().insertSheet("Auswertung");
@@ -34,7 +82,7 @@ function ensureSummarySheet(){
   sheet.getRange("A42").setValue("Übersicht pro Kunde").setFontWeight("bold");
   sheet.getRange("A43").setFormula('=QUERY(Einträge!A:Z;"select W, sum(L), sum(P), sum(F), sum(R) where W is not null group by W label W \'Kunde\', sum(L) \'Stunden\', sum(P) \'Maschinenkosten\', sum(F) \'Fahrerkosten\', sum(R) \'Gesamtkosten\'";1)');
 }
-function setupSheets(){ensureEntriesSheet();ensureItemsSheet();ensureSummarySheet()}
+function setupSheets(){ensureEntriesSheet();ensureItemsSheet();ensureCompanySheet();ensureSummarySheet()}
 function makeDeliveryNoteNumber(){
   var year=new Date().getFullYear();
   var sheet=ensureEntriesSheet();
@@ -108,6 +156,10 @@ function doPost(e){
   setupSheets();
   var data=JSON.parse(e.postData.contents);
   var action=data.action||"entry";
+  if(action==="saveCompany"){
+    saveCompany(data.company||{});
+    return ContentService.createTextOutput(JSON.stringify({ok:true})).setMimeType(ContentService.MimeType.JSON);
+  }
   if(action==="addMachine"){
     addMachine(data.typ,data.name||data.maschine,data.stundensatz);
     return ContentService.createTextOutput(JSON.stringify({ok:true})).setMimeType(ContentService.MimeType.JSON);
@@ -151,6 +203,7 @@ function doPost(e){
 function doGet(e){
   setupSheets();
   var action=e&&e.parameter?e.parameter.action:"";
+  if(action==="company")return ContentService.createTextOutput(JSON.stringify({ok:true,company:getCompany()})).setMimeType(ContentService.MimeType.JSON);
   if(action==="machines"){
     return ContentService.createTextOutput(JSON.stringify({ok:true,zugmaschinen:getItemsByType("zugmaschine"),anbaugeraete:getItemsByType("anbaugeraet")})).setMimeType(ContentService.MimeType.JSON);
   }
