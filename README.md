@@ -1,18 +1,17 @@
-# Betrieb Maschinen App v8 - Einheiten
+# Betrieb Maschinen App v9 - Abrechnungsmodus
 
 Neu:
-- Anbaugeräte können nach Stunden, Hektar oder m³ abgerechnet werden.
-- Bei Hektar oder m³ wird die Zugmaschine nicht berechnet.
-- Bei Hektar oder m³ erscheint ein Mengenfeld.
-- Gesamtpreis = Menge × Preis pro Einheit.
-- Lieferschein und Google Sheets verwenden die richtige Einheit.
-- Auswertung pro Anbaugerät mit Menge und Einheit.
+- Bei Anbaugeräten kann gewählt werden:
+  1. Stunden
+  2. Menge als Gesamtpreis
+  3. Menge + Zugmaschine
+- Beispiel Maislegegerät: Menge als Gesamtpreis, ha, Preis/ha, Zugmaschine wird nicht extra berechnet.
+- Beispiel Güllefass: Menge + Zugmaschine, m³, Preis/m³, Zugmaschine wird zusätzlich nach Stunden berechnet.
 
-Update:
-1. Dateien auf GitHub ersetzen.
-2. Google Apps Script `Code.gs` komplett ersetzen.
-3. Speichern.
-4. Bereitstellen → Bereitstellungen verwalten → Stift → Neue Version → Bereitstellen.
-5. Vercel Redeploy.
+Wichtig:
+1. Dateien auf GitHub ersetzen
+2. Google Apps Script Code.gs ersetzen
+3. Neue Version bereitstellen
+4. Vercel redeployen
 
 © by Steininger Flo
