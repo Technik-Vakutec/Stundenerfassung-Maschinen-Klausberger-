@@ -1,17 +1,19 @@
-# Betrieb Maschinen App v9 - Abrechnungsmodus
+# Betrieb Maschinen App v10 - Traktor Ja/Nein
 
-Neu:
-- Bei Anbaugeräten kann gewählt werden:
-  1. Stunden
-  2. Menge als Gesamtpreis
-  3. Menge + Zugmaschine
-- Beispiel Maislegegerät: Menge als Gesamtpreis, ha, Preis/ha, Zugmaschine wird nicht extra berechnet.
-- Beispiel Güllefass: Menge + Zugmaschine, m³, Preis/m³, Zugmaschine wird zusätzlich nach Stunden berechnet.
+Neu in v10:
+- Beim Anbaugerät gibt es die klare Option: Traktor extra Ja/Nein
+- Abrechnung: Stunden / Hektar / m³
+- Wenn Traktor extra = Nein, wird die Zugmaschine nicht berechnet.
+- Wenn Traktor extra = Ja, wird die Zugmaschine zusätzlich nach Stunden berechnet.
+- Lieferschein und Google Sheets trennen Traktorkosten und Anbaugerätkosten.
 
-Wichtig:
+Update:
 1. Dateien auf GitHub ersetzen
-2. Google Apps Script Code.gs ersetzen
-3. Neue Version bereitstellen
-4. Vercel redeployen
+2. Google Apps Script Code.gs komplett ersetzen
+3. Speichern
+4. Bereitstellen -> Bereitstellungen verwalten -> Stift -> Neue Version -> Bereitstellen
+5. Vercel Redeploy
+
+Environment Variable bleibt: VITE_GOOGLE_SCRIPT_URL
 
 © by Steininger Flo
