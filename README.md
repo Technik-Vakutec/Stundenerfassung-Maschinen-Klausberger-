@@ -25,3 +25,9 @@ Environment Variable bleibt: VITE_GOOGLE_SCRIPT_URL
 - Bei Verleih werden keine Betriebsstunden benötigt.
 - Anbaugeräte haben zusätzlich einen Verleihpreis pro Tag.
 - Verleihkosten werden aus Zeitraum inkl. Start- und Enddatum berechnet.
+
+
+Änderungen v12:
+- Anbaugerät hinzufügen ist jetzt auf zwei Zeilen aufgeteilt.
+- Name des Anbaugeräts hat eine eigene volle Zeile.
+- Einheit, Preise, Traktor extra und Hinzufügen stehen darunter sauber formatiert.
