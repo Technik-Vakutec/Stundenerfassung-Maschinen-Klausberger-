@@ -1,6 +1,6 @@
-# Betrieb Maschinen App v10 - Traktor Ja/Nein
+# Betrieb Maschinen App v11 - Traktor Ja/Nein
 
-Neu in v10:
+Neu in v11:
 - Beim Anbaugerät gibt es die klare Option: Traktor extra Ja/Nein
 - Abrechnung: Stunden / Hektar / m³
 - Wenn Traktor extra = Nein, wird die Zugmaschine nicht berechnet.
@@ -17,3 +17,11 @@ Update:
 Environment Variable bleibt: VITE_GOOGLE_SCRIPT_URL
 
 © by Steininger Flo
+
+
+Änderungen v11:
+- Einsatzart heißt jetzt Dienstleistung oder Verleih.
+- Bei Verleih muss keine Zugmaschine ausgewählt werden.
+- Bei Verleih werden keine Betriebsstunden benötigt.
+- Anbaugeräte haben zusätzlich einen Verleihpreis pro Tag.
+- Verleihkosten werden aus Zeitraum inkl. Start- und Enddatum berechnet.
