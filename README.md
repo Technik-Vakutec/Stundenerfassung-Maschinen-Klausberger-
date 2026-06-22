@@ -48,3 +48,9 @@ Environment Variable bleibt: VITE_GOOGLE_SCRIPT_URL
 Änderungen v15:
 - package.json repariert.
 - Vercel Build-Fehler wegen ungültigem JSON behoben.
+
+
+Änderungen v16:
+- Lieferschein zeigt Einsatzart sauber als Dienstleistung oder Verleih.
+- Traktor zusätzlich berechnet wird jetzt aus den tatsächlichen Traktorkosten ermittelt.
+- Wenn Traktorkosten am Lieferschein stehen, wird automatisch Ja angezeigt.
