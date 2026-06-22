@@ -1,0 +1,82 @@
+
+function toNumber(value){if(value===null||value===undefined||value==="")return "";var number=Number(String(value).replace(",","."));return isNaN(number)?"":number}
+function getSpreadsheet(){return SpreadsheetApp.getActiveSpreadsheet()}
+function ensureEntriesSheet(){var sheet=getSpreadsheet().getSheetByName("Einträge");if(!sheet)sheet=getSpreadsheet().insertSheet("Einträge");var header=["Erfasst am","Zeitraum von","Zeitraum bis","Fahrer","Fahrer-Stundensatz","Fahrer-Kosten","Zugmaschine","Anbaugerät","Geräte-Kombination","Abrechnungseinheit","Anbaugerät-Menge","Anbaugerät-Preis","Anbaugerät-Kosten","Traktor mitrechnen","Traktor-Stundensatz","Traktor-Kosten","Geräte-/Maschinenkosten","Stundenzähler Beginn","Stundenzähler Ende","Betriebsstunden","Arbeitszeit Fahrer Stunden","Gesamtkosten","Diesel Liter","Einsatzart","Bemerkung","Lieferschein Nummer","Kunde","Kundenadresse","Kundenort","Kundenkontakt"];if(sheet.getLastRow()===0){sheet.appendRow(header)}else{sheet.getRange(1,1,1,header.length).setValues([header])}sheet.setFrozenRows(1);return sheet}
+function ensureItemsSheet(){var sheet=getSpreadsheet().getSheetByName("Geräte");if(!sheet)sheet=getSpreadsheet().insertSheet("Geräte");var header=["Typ","Name","Einheit","Preis","MietpreisTag","VermietungEinheit","TraktorMitrechnen","Aktiv"];if(sheet.getLastRow()===0){sheet.appendRow(header)}else{sheet.getRange(1,1,1,header.length).setValues([header])}sheet.setFrozenRows(1);return sheet}
+function ensureCompanySheet(){var sheet=getSpreadsheet().getSheetByName("Firmendaten");if(!sheet)sheet=getSpreadsheet().insertSheet("Firmendaten");if(sheet.getLastRow()===0){sheet.appendRow(["Feld","Wert"]);sheet.appendRow(["name","Max Mustermann"]);sheet.appendRow(["zusatz",""]);sheet.appendRow(["adresse","Musterstraße 1"]);sheet.appendRow(["ort","1234 Musterstadt"]);sheet.appendRow(["telefon","0664 / 12345678"]);sheet.appendRow(["email","office@muster.at"]);sheet.appendRow(["uid",""])}else{sheet.getRange(1,1,1,2).setValues([["Feld","Wert"]])}sheet.setFrozenRows(1);return sheet}
+function getCompany(){var sheet=ensureCompanySheet(),lastRow=sheet.getLastRow(),company={name:"Max Mustermann",zusatz:"",adresse:"Musterstraße 1",ort:"1234 Musterstadt",telefon:"0664 / 12345678",email:"office@muster.at",uid:""};if(lastRow<2)return company;sheet.getRange(2,1,lastRow-1,2).getValues().forEach(function(row){var key=String(row[0]||"").trim();if(key)company[key]=String(row[1]||"")});return company}
+function saveCompany(company){var sheet=ensureCompanySheet(),rows=[["Feld","Wert"],["name",company.name||""],["zusatz",company.zusatz||""],["adresse",company.adresse||""],["ort",company.ort||""],["telefon",company.telefon||""],["email",company.email||""],["uid",company.uid||""]];sheet.clear();sheet.getRange(1,1,rows.length,2).setValues(rows);sheet.setFrozenRows(1)}
+function ensureSummarySheet(){var sheet=getSpreadsheet().getSheetByName("Auswertung");if(!sheet)sheet=getSpreadsheet().insertSheet("Auswertung");sheet.clear();sheet.getRange("A1").setValue("Auswertung Maschinen-App").setFontWeight("bold").setFontSize(16);sheet.getRange("A3").setValue("Übersicht pro Zugmaschine").setFontWeight("bold");sheet.getRange("A4").setFormula('=QUERY(Einträge!A:AD;"select G, sum(T), sum(P), sum(W) where G is not null group by G label G \'Zugmaschine\', sum(T) \'Stunden\', sum(P) \'Traktorkosten\', sum(W) \'Diesel Liter\'";1)');sheet.getRange("A15").setValue("Übersicht pro Anbaugerät").setFontWeight("bold");sheet.getRange("A16").setFormula('=QUERY(Einträge!A:AD;"select H, J, sum(K), sum(M) where H is not null group by H,J label H \'Anbaugerät\', J \'Einheit\', sum(K) \'Menge\', sum(M) \'Anbaugerätkosten\'";1)')}
+function setupSheets(){ensureEntriesSheet();ensureItemsSheet();ensureCompanySheet();ensureSummarySheet()}
+function makeDeliveryNoteNumber(){var year=new Date().getFullYear(),sheet=ensureEntriesSheet(),lastRow=sheet.getLastRow(),count=0;if(lastRow>=2){sheet.getRange(2,26,lastRow-1,1).getValues().forEach(function(row){if(String(row[0]||"").indexOf("LS-"+year+"-")===0)count++})}return "LS-"+year+"-"+String(count+1).padStart(4,"0")}
+function getLastDeliveryNoteNumber(){var sheet=ensureEntriesSheet(),lastRow=sheet.getLastRow();if(lastRow<2)return"";return sheet.getRange(lastRow,26).getValue()}
+function getItemsByType(type){
+  var sheet=ensureItemsSheet();
+  var lastRow=sheet.getLastRow();
+  if(lastRow<2)return[];
+
+  var list=[];
+  var values=sheet.getRange(2,1,lastRow-1,8).getValues();
+
+  values.forEach(function(row){
+    var typ=String(row[0]||"").trim();
+    var name=String(row[1]||"").trim();
+    var unit=String(row[2]||"h").trim();
+    var rate=toNumber(row[3]);
+
+    var mietpreisTag=0;
+    var rentalUnit="tag";
+    var traktorText="Nein";
+    var activeText="Ja";
+
+    /*
+      Unterstützt beide Tabellen-Versionen:
+      Alte Geräte-Zeilen:
+      Typ | Name | Einheit | Preis | TraktorMitrechnen | Aktiv
+
+      Neue Geräte-Zeilen:
+      Typ | Name | Einheit | Preis | MietpreisTag | TraktorMitrechnen | Aktiv
+    */
+    var col5=String(row[4]||"").trim().toLowerCase();
+    var col6=String(row[5]||"").trim();
+    var col7=String(row[6]||"").trim();
+
+    if(col5==="ja"||col5==="nein"||col5==="true"||col5==="false"||col5==="1"||col5==="0"){
+      // Alte Struktur
+      mietpreisTag=0;
+      traktorText=String(row[4]||"Nein").trim();
+      activeText=String(row[5]||"Ja").trim();
+    }else{
+      // Neue Struktur
+      var rent=toNumber(row[4]);
+      mietpreisTag=rent===""?0:rent;
+      traktorText=String(row[5]||"Nein").trim();
+      activeText=String(row[6]||"Ja").trim();
+    }
+
+    var active=activeText.toLowerCase();
+    var traktor=traktorText.toLowerCase();
+
+    if(typ===type&&name&&active!=="nein"&&active!=="false"&&active!=="0"){
+      list.push({
+        name:name,
+        unit:unit||"h",
+        rate:rate===""?0:rate,
+        mietpreisTag:mietpreisTag,
+        rentalUnit:rentalUnit,
+        traktorMitrechnen:traktor==="ja"||traktor==="true"||traktor==="1"
+      });
+    }
+  });
+
+  list.sort(function(a,b){return a.name.localeCompare(b.name)});
+  return list;
+}
+function addMachine(type,name,rate,unit,traktorMitrechnen,mietpreisTag,rentalUnit){var sheet=ensureItemsSheet(),itemType=String(type||"").trim(),itemName=String(name||"").trim();if(!itemType||!itemName)return;var itemRate=toNumber(rate);if(itemRate==="")itemRate=0;var traktor=(traktorMitrechnen===true||String(traktorMitrechnen).toLowerCase()==="true"||String(traktorMitrechnen).toLowerCase()==="ja")?"Ja":"Nein";var rent=toNumber(mietpreisTag);if(rent==="")rent=0;sheet.appendRow([itemType,itemName,unit||"h",itemRate,rent,rentalUnit||"tag",traktor,"Ja"]);ensureSummarySheet()}
+
+function updateMachine(type,originalName,name,rate,unit,traktorMitrechnen,mietpreisTag,rentalUnit){
+  var sheet=ensureItemsSheet();var itemType=String(type||"").trim();var oldName=String(originalName||"").trim();var itemName=String(name||"").trim();if(!itemType||!itemName)return;var itemRate=toNumber(rate);if(itemRate==="")itemRate=0;var rent=toNumber(mietpreisTag);if(rent==="")rent=0;var traktor=(traktorMitrechnen===true||String(traktorMitrechnen).toLowerCase()==="true"||String(traktorMitrechnen).toLowerCase()==="ja")?"Ja":"Nein";var lastRow=sheet.getLastRow();for(var row=2;row<=lastRow;row++){if(String(sheet.getRange(row,1).getValue()).trim()===itemType&&String(sheet.getRange(row,2).getValue()).trim()===oldName){sheet.getRange(row,1,1,8).setValues([[itemType,itemName,unit||"h",itemRate,rent,rentalUnit||"tag",traktor,"Ja"]]);ensureSummarySheet();return}}addMachine(itemType,itemName,itemRate,unit,traktorMitrechnen,rent,rentalUnit);}
+function deleteMachine(type,name){var sheet=ensureItemsSheet(),lastRow=sheet.getLastRow();for(var row=2;row<=lastRow;row++){if(String(sheet.getRange(row,1).getValue()).trim()===String(type).trim()&&String(sheet.getRange(row,2).getValue()).trim()===String(name).trim()){sheet.getRange(row,8).setValue("Nein");ensureSummarySheet();return}}}
+function findLastEndeForZugmaschine(zugmaschine){var sheet=ensureEntriesSheet(),lastRow=sheet.getLastRow();if(lastRow<2)return"";for(var row=lastRow;row>=2;row--){if(String(sheet.getRange(row,7).getValue()).trim()===zugmaschine)return sheet.getRange(row,19).getValue()}return""}
+function doPost(e){setupSheets();var data=JSON.parse(e.postData.contents),action=data.action||"entry";if(action==="saveCompany"){saveCompany(data.company||{});return ContentService.createTextOutput(JSON.stringify({ok:true})).setMimeType(ContentService.MimeType.JSON)}if(action==="addMachine"){addMachine(data.typ,data.name||data.maschine,data.stundensatz,data.einheit,data.traktorMitrechnen,data.mietpreisTag,data.rentalUnit);return ContentService.createTextOutput(JSON.stringify({ok:true})).setMimeType(ContentService.MimeType.JSON)}if(action==="deleteMachine"){deleteMachine(data.typ,data.name||data.maschine);return ContentService.createTextOutput(JSON.stringify({ok:true})).setMimeType(ContentService.MimeType.JSON)}var sheet=ensureEntriesSheet(),lsNumber=makeDeliveryNoteNumber();var row=[new Date(),data.datumVon||"",data.datumBis||"",data.fahrer||"",toNumber(data.fahrerStundensatz),toNumber(data.fahrerkosten),data.zugmaschine||"",data.anbaugeraet||"",data.geraetKombination||"",data.abrechnungseinheit||"",toNumber(data.anbauMenge),toNumber(data.anbauPreis),toNumber(data.anbauKosten),data.traktorMitrechnen?"Ja":"Nein",toNumber(data.zugStundensatz),toNumber(data.zugKosten),toNumber(data.geraeteKosten),toNumber(data.stundenStart),toNumber(data.stundenEnde),toNumber(data.betriebsstunden),toNumber(data.fahrerArbeitszeitStunden),toNumber(data.gesamtkosten),toNumber(data.diesel),data.einsatzart==="verleih"?"Verleih":"Dienstleistung",data.bemerkung||"",lsNumber,data.kundeName||"",data.kundeAdresse||"",data.kundeOrt||"",data.kundeKontakt||""];sheet.appendRow(row);ensureSummarySheet();return ContentService.createTextOutput(JSON.stringify({ok:true,lsNumber:lsNumber})).setMimeType(ContentService.MimeType.JSON)}
+function doGet(e){setupSheets();var action=e&&e.parameter?e.parameter.action:"";if(action==="company")return ContentService.createTextOutput(JSON.stringify({ok:true,company:getCompany()})).setMimeType(ContentService.MimeType.JSON);if(action==="machines")return ContentService.createTextOutput(JSON.stringify({ok:true,zugmaschinen:getItemsByType("zugmaschine"),anbaugeraete:getItemsByType("anbaugeraet")})).setMimeType(ContentService.MimeType.JSON);if(action==="last"){var zugmaschine=e.parameter.zugmaschine||e.parameter.machine||"";return ContentService.createTextOutput(JSON.stringify({ok:true,lastEnde:findLastEndeForZugmaschine(zugmaschine)})).setMimeType(ContentService.MimeType.JSON)}if(action==="lastDeliveryNote")return ContentService.createTextOutput(JSON.stringify({ok:true,lsNumber:getLastDeliveryNoteNumber()})).setMimeType(ContentService.MimeType.JSON);if(action==="setup")return ContentService.createTextOutput(JSON.stringify({ok:true,message:"Tabellen wurden eingerichtet."})).setMimeType(ContentService.MimeType.JSON);return ContentService.createTextOutput("Maschinen-App ist aktiv.").setMimeType(ContentService.MimeType.TEXT)}
