@@ -31,3 +31,9 @@ Environment Variable bleibt: VITE_GOOGLE_SCRIPT_URL
 - Anbaugerät hinzufügen ist jetzt auf zwei Zeilen aufgeteilt.
 - Name des Anbaugeräts hat eine eigene volle Zeile.
 - Einheit, Preise, Traktor extra und Hinzufügen stehen darunter sauber formatiert.
+
+
+Änderungen v13:
+- Fehler beim Laden der Geräte behoben.
+- Google Sheet Geräte wird mit alter und neuer Spaltenstruktur unterstützt.
+- MietpreisTag wird korrekt gelesen.

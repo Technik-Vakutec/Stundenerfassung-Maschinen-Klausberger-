@@ -10,8 +10,66 @@ function ensureSummarySheet(){var sheet=getSpreadsheet().getSheetByName("Auswert
 function setupSheets(){ensureEntriesSheet();ensureItemsSheet();ensureCompanySheet();ensureSummarySheet()}
 function makeDeliveryNoteNumber(){var year=new Date().getFullYear(),sheet=ensureEntriesSheet(),lastRow=sheet.getLastRow(),count=0;if(lastRow>=2){sheet.getRange(2,26,lastRow-1,1).getValues().forEach(function(row){if(String(row[0]||"").indexOf("LS-"+year+"-")===0)count++})}return "LS-"+year+"-"+String(count+1).padStart(4,"0")}
 function getLastDeliveryNoteNumber(){var sheet=ensureEntriesSheet(),lastRow=sheet.getLastRow();if(lastRow<2)return"";return sheet.getRange(lastRow,26).getValue()}
-function getItemsByType(type){var sheet=ensureItemsSheet(),lastRow=sheet.getLastRow();if(lastRow<2)return[];var list=[];sheet.getRange(2,1,lastRow-1,7).getValues().forEach(function(row){var typ=String(row[0]||"").trim(),name=String(row[1]||"").trim(),unit=String(row[2]||"h").trim(),rate=toNumber(row[3]),traktor=String(row[4]||"Nein").trim().toLowerCase(),active=String(row[5]||"Ja").trim().toLowerCase();if(typ===type&&name&&active!=="nein"&&active!=="false"&&active!=="0")list.push({name:name,unit:unit||"h",rate:rate===""?0:rate,mietpreisTag:mietpreisTag===""?0:mietpreisTag,
-        traktorMitrechnen:traktor==="ja"||traktor==="true"||traktor==="1"})});list.sort(function(a,b){return a.name.localeCompare(b.name)});return list}
+function getItemsByType(type){
+  var sheet=ensureItemsSheet();
+  var lastRow=sheet.getLastRow();
+  if(lastRow<2)return[];
+
+  var list=[];
+  var values=sheet.getRange(2,1,lastRow-1,7).getValues();
+
+  values.forEach(function(row){
+    var typ=String(row[0]||"").trim();
+    var name=String(row[1]||"").trim();
+    var unit=String(row[2]||"h").trim();
+    var rate=toNumber(row[3]);
+
+    var mietpreisTag=0;
+    var traktorText="Nein";
+    var activeText="Ja";
+
+    /*
+      Unterstützt beide Tabellen-Versionen:
+      Alte Geräte-Zeilen:
+      Typ | Name | Einheit | Preis | TraktorMitrechnen | Aktiv
+
+      Neue Geräte-Zeilen:
+      Typ | Name | Einheit | Preis | MietpreisTag | TraktorMitrechnen | Aktiv
+    */
+    var col5=String(row[4]||"").trim().toLowerCase();
+    var col6=String(row[5]||"").trim();
+    var col7=String(row[6]||"").trim();
+
+    if(col5==="ja"||col5==="nein"||col5==="true"||col5==="false"||col5==="1"||col5==="0"){
+      // Alte Struktur
+      mietpreisTag=0;
+      traktorText=String(row[4]||"Nein").trim();
+      activeText=String(row[5]||"Ja").trim();
+    }else{
+      // Neue Struktur
+      var rent=toNumber(row[4]);
+      mietpreisTag=rent===""?0:rent;
+      traktorText=String(row[5]||"Nein").trim();
+      activeText=String(row[6]||"Ja").trim();
+    }
+
+    var active=activeText.toLowerCase();
+    var traktor=traktorText.toLowerCase();
+
+    if(typ===type&&name&&active!=="nein"&&active!=="false"&&active!=="0"){
+      list.push({
+        name:name,
+        unit:unit||"h",
+        rate:rate===""?0:rate,
+        mietpreisTag:mietpreisTag,
+        traktorMitrechnen:traktor==="ja"||traktor==="true"||traktor==="1"
+      });
+    }
+  });
+
+  list.sort(function(a,b){return a.name.localeCompare(b.name)});
+  return list;
+}
 function addMachine(type,name,rate,unit,traktorMitrechnen,mietpreisTag){var sheet=ensureItemsSheet(),itemType=String(type||"").trim(),itemName=String(name||"").trim();if(!itemType||!itemName)return;var itemRate=toNumber(rate);if(itemRate==="")itemRate=0;var traktor=(traktorMitrechnen===true||String(traktorMitrechnen).toLowerCase()==="true"||String(traktorMitrechnen).toLowerCase()==="ja")?"Ja":"Nein";var rent=toNumber(mietpreisTag);if(rent==="")rent=0;sheet.appendRow([itemType,itemName,unit||"h",itemRate,rent,traktor,"Ja"]);ensureSummarySheet()}
 function deleteMachine(type,name){var sheet=ensureItemsSheet(),lastRow=sheet.getLastRow();for(var row=2;row<=lastRow;row++){if(String(sheet.getRange(row,1).getValue()).trim()===String(type).trim()&&String(sheet.getRange(row,2).getValue()).trim()===String(name).trim()){sheet.getRange(row,7).setValue("Nein");ensureSummarySheet();return}}}
 function findLastEndeForZugmaschine(zugmaschine){var sheet=ensureEntriesSheet(),lastRow=sheet.getLastRow();if(lastRow<2)return"";for(var row=lastRow;row>=2;row--){if(String(sheet.getRange(row,7).getValue()).trim()===zugmaschine)return sheet.getRange(row,19).getValue()}return""}
