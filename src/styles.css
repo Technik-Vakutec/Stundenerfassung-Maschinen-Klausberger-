@@ -43,3 +43,7 @@
     grid-template-columns:1fr;
   }
 }
+
+
+/* v14 */
+.item-buttons{display:flex;gap:8px;flex-wrap:wrap}.item-buttons button:first-child{background:#dbeafe;color:#1d4ed8}.anbau-form{display:grid;grid-template-columns:1fr 1fr;gap:14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:12px}.anbau-block{background:white;border:1px solid #e2e8f0;border-radius:14px;padding:12px;display:grid;gap:10px}.anbau-block h4{margin:0;font-size:.95rem;color:#0f172a}.anbau-row-details{display:grid;grid-template-columns:1fr;gap:10px}.rent-row{grid-template-columns:1fr}@media(max-width:760px){.anbau-form{grid-template-columns:1fr}}
